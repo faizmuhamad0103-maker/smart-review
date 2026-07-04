@@ -1,5 +1,4 @@
 import "./styles/main.css";
+import { router } from "./router";
 
-import { dashboardPage } from "./pages/dashboard";
-
-dashboardPage();
+router();

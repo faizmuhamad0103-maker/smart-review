@@ -8,7 +8,7 @@ export async function dashboardPage() {
   app.innerHTML = `
     <div class="container">
 
-      <h1>🚀 Smart Review</h1>
+      <h1>Smart Review Gmaps</h1>
 
       <div id="form-container"></div>
 
