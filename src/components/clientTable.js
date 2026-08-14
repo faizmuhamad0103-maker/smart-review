@@ -1,137 +1,292 @@
 import Swal from "sweetalert2";
-import { getAllClients, deleteClient } from "../services/clientServices";
+
+import {
+  getAllClients,
+  deleteClient
+} from "../services/clientServices";
+
 import { copyToClipboard } from "../utils/copyToClipboard";
+
 import { downloadQR } from "../utils/generateQR";
 
+import { generateWhatsAppUrl } from "../utils/whatsapp";
+
+
 export async function renderClientTable() {
-    const clients = await getAllClients();
 
-    if (clients.length === 0) {
-        document.querySelector("#table-container").innerHTML =
-            "<p>Belum ada client.</p>";
-        return;
-    }
+  const clients = await getAllClients();
 
-    document.querySelector("#table-container").innerHTML = `
+
+  if (clients.length === 0) {
+
+    document.querySelector("#table-container").innerHTML =
+      "<p>Belum ada client.</p>";
+
+    return;
+
+  }
+
+
+  document.querySelector("#table-container").innerHTML = `
+
     <table>
 
       <thead>
+
         <tr>
+
           <th>Nama Bisnis</th>
+
           <th>Status</th>
+
           <th>Aksi</th>
+
         </tr>
+
       </thead>
+
 
       <tbody>
 
         ${clients
-            .map(
-                (client) => `
+          .map(
+            (client) => `
+
               <tr>
 
-                <td>${client.businessName}</td>
+                <td>
+                  ${client.businessName}
+                </td>
 
-                <td>${client.active ? "🟢 Aktif" : "🔴 Nonaktif"}</td>
+
+                <td>
+                  ${
+                    client.active
+                      ? "🟢 Aktif"
+                      : "🔴 Nonaktif"
+                  }
+                </td>
+
 
                 <td>
 
-        <button
-    class="copy-btn"
-data-url="${client.shortUrl}">
-📋 Copy
-</button>
+                  <button
+                    class="copy-btn"
+                    data-url="${client.shortUrl}"
+                  >
+                    📋 Copy
+                  </button>
 
-<button
-class="qr-btn"
-data-url="${client.shortUrl}"
-data-name="${client.businessName}">
-📥 QR
-</button>
 
-<button
-class="delete-btn"
-data-id="${client.id}">
-🗑 Delete
-</button>
+                  <button
+                    class="qr-btn"
+                    data-url="${client.shortUrl}"
+                    data-name="${client.businessName}"
+                  >
+                    📥 QR
+                  </button>
 
-</td>
+
+                  <button
+                    class="wa-btn"
+                    data-id="${client.id}"
+                    data-phone="${client.whatsapp || ""}"
+                    data-template="${client.templateCategory || ""}"
+                    data-business="${client.businessName}"
+                  >
+                    💬 Chat WA
+                  </button>
+
+
+                  <button
+                    class="delete-btn"
+                    data-id="${client.id}"
+                  >
+                    🗑 Delete
+                  </button>
+
+                </td>
 
               </tr>
+
             `
-            )
-            .join("")}
+          )
+          .join("")}
 
       </tbody>
 
     </table>
+
   `;
 
-    document.querySelectorAll(".copy-btn").forEach((button) => {
-        button.addEventListener("click", () => {
-            copyToClipboard(button.dataset.url);
-        });
+
+  // COPY
+
+  document
+    .querySelectorAll(".copy-btn")
+    .forEach((button) => {
+
+      button.addEventListener("click", () => {
+
+        copyToClipboard(
+          button.dataset.url
+        );
+
+      });
+
     });
 
 
-    document.querySelectorAll(".qr-btn").forEach((button) => {
+  // QR
 
-        button.addEventListener("click", () => {
+  document
+    .querySelectorAll(".qr-btn")
+    .forEach((button) => {
 
-            downloadQR(
+      button.addEventListener("click", () => {
 
-                button.dataset.url,
+        downloadQR(
+          button.dataset.url,
+          button.dataset.name
+        );
 
-                button.dataset.name
+      });
 
+    });
+
+
+  // WHATSAPP
+
+  document
+    .querySelectorAll(".wa-btn")
+    .forEach((button) => {
+
+      button.addEventListener("click", () => {
+
+        const phone =
+          button.dataset.phone;
+
+        const template =
+          button.dataset.template;
+
+        const businessName =
+          button.dataset.business;
+
+
+        if (!phone) {
+
+          Swal.fire({
+            icon: "warning",
+            title: "Nomor WhatsApp belum ada",
+            text: "Client ini belum memiliki nomor WhatsApp.",
+          });
+
+          return;
+
+        }
+
+
+        if (!template) {
+
+          Swal.fire({
+            icon: "warning",
+            title: "Template belum dipilih",
+            text: "Client ini belum memiliki template chat.",
+          });
+
+          return;
+
+        }
+
+
+        try {
+
+          const url =
+            generateWhatsAppUrl(
+              phone,
+              template,
+              businessName
             );
 
-        });
+
+          window.open(
+            url,
+            "_blank"
+          );
+
+
+        } catch (error) {
+
+          Swal.fire({
+            icon: "error",
+            title: "Gagal membuka WhatsApp",
+            text: error.message,
+          });
+
+        }
+
+      });
 
     });
 
-    document.querySelectorAll(".delete-btn").forEach((button) => {
 
-  button.addEventListener("click", async () => {
+  // DELETE
 
-    const result = await Swal.fire({
+  document
+    .querySelectorAll(".delete-btn")
+    .forEach((button) => {
 
-      title: "Hapus client?",
+      button.addEventListener(
+        "click",
+        async () => {
 
-      text: "Data tidak bisa dikembalikan.",
+          const result =
+            await Swal.fire({
 
-      icon: "warning",
+              title: "Hapus client?",
 
-      showCancelButton: true,
+              text: "Data tidak bisa dikembalikan.",
 
-      confirmButtonText: "Ya",
+              icon: "warning",
 
-      cancelButtonText: "Batal",
+              showCancelButton: true,
+
+              confirmButtonText: "Ya",
+
+              cancelButtonText: "Batal",
+
+            });
+
+
+          if (!result.isConfirmed)
+            return;
+
+
+          await deleteClient(
+            button.dataset.id
+          );
+
+
+          await renderClientTable();
+
+
+          Swal.fire({
+
+            icon: "success",
+
+            title: "Berhasil",
+
+            text: "Client dihapus.",
+
+            timer: 1200,
+
+            showConfirmButton: false,
+
+          });
+
+        }
+      );
 
     });
-
-    if (!result.isConfirmed) return;
-
-    await deleteClient(button.dataset.id);
-
-    await renderClientTable();
-
-    Swal.fire({
-
-      icon: "success",
-
-      title: "Berhasil",
-
-      text: "Client dihapus.",
-
-      timer: 1200,
-
-      showConfirmButton: false,
-
-    });
-
-  });
-
-});
 
 }
