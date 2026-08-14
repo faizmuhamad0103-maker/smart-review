@@ -1,11 +1,17 @@
 import Swal from "sweetalert2";
 
 import { addClient } from "../services/clientServices";
-import { generateClientId,
-         generateShortUrl,
-        } from "../utils/generateId";
+
+import {
+  generateClientId,
+  generateShortUrl,
+} from "../utils/generateId";
+
+import { normalizeWhatsAppNumber } from "../utils/whatsapp";
+
 
 export function renderClientForm(onSuccess) {
+
   document.querySelector("#form-container").innerHTML = `
     <form id="client-form">
 
@@ -21,6 +27,40 @@ export function renderClientForm(onSuccess) {
         placeholder="Google Review URL"
       />
 
+      <input
+        id="whatsapp"
+        type="tel"
+        placeholder="Nomor WhatsApp"
+      />
+
+      <select id="templateCategory">
+
+        <option value="">
+          Pilih Template Chat
+        </option>
+
+        <option value="cafe">
+          Cafe
+        </option>
+
+        <option value="restaurant">
+          Restaurant
+        </option>
+
+        <option value="barbershop">
+          Barbershop / Salon
+        </option>
+
+        <option value="hotel">
+          Hotel
+        </option>
+
+        <option value="other">
+          Bisnis Lainnya
+        </option>
+
+      </select>
+
       <button type="submit">
         Simpan Client
       </button>
@@ -28,23 +68,43 @@ export function renderClientForm(onSuccess) {
     </form>
   `;
 
+
   document
     .querySelector("#client-form")
     .addEventListener("submit", async (e) => {
 
       e.preventDefault();
 
+
       const businessName = document
         .querySelector("#businessName")
         .value
         .trim();
+
 
       const reviewUrl = document
         .querySelector("#reviewUrl")
         .value
         .trim();
 
-      if (!businessName || !reviewUrl) {
+
+      const whatsapp = document
+        .querySelector("#whatsapp")
+        .value
+        .trim();
+
+
+      const templateCategory = document
+        .querySelector("#templateCategory")
+        .value;
+
+
+      if (
+        !businessName ||
+        !reviewUrl ||
+        !whatsapp ||
+        !templateCategory
+      ) {
 
         Swal.fire({
           icon: "warning",
@@ -55,16 +115,48 @@ export function renderClientForm(onSuccess) {
         return;
       }
 
-        const id =  generateClientId();
 
-        const client = {
-             id,
-             businessName,
-             reviewUrl,
-             shortUrl: generateShortUrl(id),
-        };
+      let normalizedWhatsapp;
+
+      try {
+
+        normalizedWhatsapp =
+          normalizeWhatsAppNumber(whatsapp);
+
+      } catch (error) {
+
+        Swal.fire({
+          icon: "warning",
+          title: "Nomor WhatsApp tidak valid",
+          text: error.message,
+        });
+
+        return;
+      }
+
+
+      const id = generateClientId();
+
+
+      const client = {
+
+        id,
+
+        businessName,
+
+        reviewUrl,
+
+        whatsapp: normalizedWhatsapp,
+
+        templateCategory,
+
+        shortUrl: generateShortUrl(id),
+
+      };
+
 
       const result = await addClient(client);
+
 
       if (result.success) {
 
@@ -82,9 +174,14 @@ export function renderClientForm(onSuccess) {
 
         });
 
-        document.querySelector("#client-form").reset();
+
+        document
+          .querySelector("#client-form")
+          .reset();
+
 
         onSuccess();
+
 
       } else {
 
