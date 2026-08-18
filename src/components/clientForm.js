@@ -135,12 +135,18 @@ export function renderClientForm(onSuccess) {
       }
 
 
-      const id = generateClientId();
+      // Generate ID unik untuk setiap card
+      const cardId = generateClientId();
+
+      // URL yang akan digunakan oleh QR dan NFC
+      const shortUrl = generateShortUrl(cardId);
 
 
       const client = {
 
-        id,
+        id: cardId,
+
+        cardId,
 
         businessName,
 
@@ -150,7 +156,7 @@ export function renderClientForm(onSuccess) {
 
         templateCategory,
 
-        shortUrl: generateShortUrl(id),
+        shortUrl,
 
       };
 
@@ -164,11 +170,26 @@ export function renderClientForm(onSuccess) {
 
           icon: "success",
 
-          title: "Berhasil",
+          title: "Card berhasil dibuat",
 
-          text: "Client berhasil ditambahkan.",
+          html: `
+            <p>
+              <strong>${businessName}</strong>
+            </p>
 
-          timer: 1500,
+            <p>
+              Card ID:
+              <strong>${cardId}</strong>
+            </p>
+
+            <p>
+              URL:
+              <br>
+              ${shortUrl}
+            </p>
+          `,
+
+          timer: 2500,
 
           showConfirmButton: false,
 
