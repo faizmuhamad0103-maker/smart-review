@@ -1,16 +1,15 @@
 import Swal from "sweetalert2";
 
-import {
-  getAllClients,
-  deleteClient
-} from "../services/clientServices";
-
 import { copyToClipboard } from "../utils/copyToClipboard";
 
 import { downloadQR } from "../utils/generateQR";
 
 import { generateWhatsAppUrl } from "../utils/whatsapp";
-
+import {
+  getAllClients,
+  deleteClient,
+  updateClient
+} from "../services/clientServices";
 
 export async function renderClientTable() {
 
@@ -49,8 +48,8 @@ export async function renderClientTable() {
       <tbody>
 
         ${clients
-          .map(
-            (client) => `
+      .map(
+        (client) => `
 
               <tr>
 
@@ -60,11 +59,10 @@ export async function renderClientTable() {
 
 
                 <td>
-                  ${
-                    client.active
-                      ? "🟢 Aktif"
-                      : "🔴 Nonaktif"
-                  }
+                  ${client.active
+            ? "🟢 Aktif"
+            : "🔴 Nonaktif"
+          }
                 </td>
 
 
@@ -75,6 +73,15 @@ export async function renderClientTable() {
                     data-url="${client.shortUrl}"
                   >
                     📋 Copy
+                  </button>
+
+                  <button
+                    class="link-btn"
+                    data-id="${client.id}"
+                    data-url="${client.googleReviewUrl || ""}"
+                    data-business="${client.businessName}"
+                  >
+                    🔗 masukan url toko
                   </button>
 
 
@@ -110,8 +117,8 @@ export async function renderClientTable() {
               </tr>
 
             `
-          )
-          .join("")}
+      )
+      .join("")}
 
       </tbody>
 
@@ -289,4 +296,76 @@ export async function renderClientTable() {
 
     });
 
+
+    // GOOGLE REVIEW LINK
+
+document
+  .querySelectorAll(".link-btn")
+  .forEach((button) => {
+
+    button.addEventListener("click", async () => {
+
+      const id = button.dataset.id;
+      const businessName = button.dataset.business;
+      const currentUrl = button.dataset.url;
+
+      const result = await Swal.fire({
+
+        title: `Google Review - ${businessName}`,
+
+        input: "url",
+
+        inputLabel: "Masukkan Google Maps Review URL",
+
+        inputValue: currentUrl,
+
+        inputPlaceholder: "https://g.page/r/...",
+
+        showCancelButton: true,
+
+        confirmButtonText: "Simpan",
+
+        cancelButtonText: "Batal",
+
+        inputValidator: (value) => {
+
+          if (!value) {
+            return "Link Google Review wajib diisi";
+          }
+
+        }
+
+      });
+
+      if (!result.isConfirmed) return;
+
+      try {
+
+        await updateClient(id, {
+          googleReviewUrl: result.value
+        });
+
+        await renderClientTable();
+
+        Swal.fire({
+          icon: "success",
+          title: "Berhasil",
+          text: "Google Review Link berhasil disimpan.",
+          timer: 1200,
+          showConfirmButton: false,
+        });
+
+      } catch (error) {
+
+        Swal.fire({
+          icon: "error",
+          title: "Gagal",
+          text: error.message,
+        });
+
+      }
+
+    });
+
+  });
 }

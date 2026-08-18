@@ -40,6 +40,6 @@ export async function redirectPage(id) {
     client.businessName;
 
   setTimeout(() => {
-    window.location.href = client.reviewUrl;
+      window.location.href = client.googleReviewUrl;
   }, 1000);
 }
